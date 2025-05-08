@@ -1,0 +1,59 @@
+package com.project.demo.controllers;
+
+import com.project.demo.enums.AssetStatus;
+import com.project.demo.dtos.assetDtos.AssetRequest;
+import com.project.demo.entities.Asset;
+import com.project.demo.entities.AssetHistory;
+import com.project.demo.services.AssetService;
+import lombok.RequiredArgsConstructor;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+
+@RestController
+@RequestMapping("/api/assets")
+@RequiredArgsConstructor
+public class AssetController {
+
+    private final AssetService assetService;
+
+    @GetMapping
+    public List<Asset> getAllAssets() {
+        return assetService.getAllAssets();
+    }
+
+    @GetMapping("/{id}")
+    public Asset getAsset(@PathVariable Long id) {
+        return assetService.getAssetById(id);
+    }
+
+    @PostMapping
+    public Asset createAsset(@RequestBody AssetRequest asset) {
+        
+        return assetService.createAsset(asset);
+    }
+
+    @PutMapping("/{id}")
+    public Asset updateAsset(@PathVariable Long id, @RequestBody Asset asset) {
+        return assetService.updateAsset(id, asset);
+    }
+
+    @DeleteMapping("/{id}")
+    public void deleteAsset(@PathVariable Long id) {
+        assetService.deleteAsset(id);
+    }
+
+    @PutMapping("/{id}/status")
+    public Asset updateAssetStatus(
+        @PathVariable Long id,
+        @RequestParam AssetStatus status,
+        @RequestParam(required = false) String note) {
+        return assetService.updateAssetStatus(id, status);
+    }
+
+    @GetMapping("/{id}/history")
+    public List<AssetHistory> getAssetHistory(@PathVariable Long id) {
+        return assetService.getAssetHistory(id);
+    }
+    
+}
