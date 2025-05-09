@@ -1,5 +1,6 @@
 package com.project.demo.services;
 
+import com.project.demo.dtos.userDTOs.AuthResponse;
 import com.project.demo.dtos.userDTOs.LoginRequest;
 import com.project.demo.dtos.userDTOs.RegisterRequest;
 import com.project.demo.entities.User;
@@ -27,13 +28,15 @@ public class AuthService {
         userRepo.save(user);
     }
 
-    public String login(LoginRequest request) {
+    public AuthResponse login(LoginRequest request) {
         User user = userRepo.findByUsername(request.getUsername())
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
         if (!passwordEncoder.matches(request.getPassword(), user.getPassword()))
             throw new RuntimeException("Invalid password");
 
-        return jwtUtil.generateToken(user.getUsername());
+        String token = jwtUtil.generateToken(user.getUsername());
+
+        return new AuthResponse(token, user.getId());
     }
 }
