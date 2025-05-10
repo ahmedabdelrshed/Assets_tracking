@@ -1,11 +1,10 @@
 import { Outlet } from "react-router-dom";
-import Navbar from "../ui/Navbar";
 
 const Layout = () => {
   return (
    <>
     <div>
-      <Navbar />
+   <h2 className="text-center mt-10 text-3xl text-blue-600">Asset Tracking System </h2>
     </div>
     <div className="container">
         <Outlet/>

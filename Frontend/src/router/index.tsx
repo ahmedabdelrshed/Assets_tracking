@@ -20,9 +20,9 @@ const router = createBrowserRouter(
         <Route
           index
           element={
-            <ProtectedRouter isAllowed={userData?.jwt} redirectPath="/login">
+            // <ProtectedRouter isAllowed={userData?.jwt} redirectPath="/login">
               <HomePage />
-            </ProtectedRouter>
+            // </ProtectedRouter>
           }
         />
         <Route

@@ -31,12 +31,12 @@ const Login = () => {
       const res = await axiosInstance.post("/auth/login", data);
       localStorage.setItem("userData", JSON.stringify(res.data));
       if (res.status === 200) {
-        toast.success("You will navigate to the Home page after 3 seconds.", {
+        toast.success("You will navigate to the Home page after 2 seconds.", {
           duration: 1500,
         });
-        // setTimeout(() => {
-        //   location.replace("/");
-        // }, 2000);
+        setTimeout(() => {
+          location.replace("/");
+        }, 2000);
       }
     } catch (error) {
       const objError = error as AxiosError<IErrorResponse>;
