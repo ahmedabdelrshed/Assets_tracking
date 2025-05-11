@@ -1,5 +1,9 @@
 import { useEffect, useState } from "react";
 import axiosInstance from "../config/axios.config";
+import Button from "../ui/Button";
+import Modal from "../ui/Modal";
+import Input from "../ui/Input";
+import toast from "react-hot-toast";
 
 interface Asset {
   id: number;
@@ -15,27 +19,64 @@ const AssetsTable = () => {
   const [filteredAssets, setFilteredAssets] = useState<Asset[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [newAssetName, setNewAssetName] = useState(""); // New state for asset name
 
-  useEffect(() => {
-    const fetchAssets = async () => {
-      try {
-        const userData = localStorage.getItem("userData");
-        const token = userData ? JSON.parse(userData).token : null;
-        setLoading(true);
-        const response = await axiosInstance.get("/assets", {
+  const toggleModal = () => {
+    setIsModalOpen(!isModalOpen);
+    setNewAssetName(""); // Reset form when modal is toggled
+  };
+
+  const fetchAssets = async () => {
+    try {
+      const userData = localStorage.getItem("userData");
+      const token = userData ? JSON.parse(userData).token : null;
+      setLoading(true);
+      const response = await axiosInstance.get("/assets", {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      setAssets(response.data);
+      setFilteredAssets(response.data);
+    } catch (error) {
+      console.error("Error fetching assets:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    try {
+      const userData = localStorage.getItem("userData");
+      const token = userData ? JSON.parse(userData).token : null;
+
+      await axiosInstance.post(
+        "/assets",
+        { name: newAssetName },
+        {
           headers: {
             Authorization: `Bearer ${token}`,
           },
-        });
-        setAssets(response.data);
-        setFilteredAssets(response.data); // Set initial filtered list
-      } catch (error) {
-        console.error("Error fetching assets:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
+        }
+      );
 
+      toast.success("Asset created successfully");
+
+      // Clear form and close modal
+      setNewAssetName("");
+      toggleModal();
+
+      // Refresh assets list
+      await fetchAssets();
+    } catch (error) {
+      console.error("Error creating asset:", error);
+    }
+  };
+
+  useEffect(() => {
     fetchAssets();
   }, []);
 
@@ -47,13 +88,12 @@ const AssetsTable = () => {
       const filtered = assets.filter(
         (asset) =>
           asset.name.toLowerCase().includes(lowerSearch) ||
-          asset.status.toLowerCase().includes(lowerSearch) ||
-          asset.assignedTo.username.toLowerCase().includes(lowerSearch)
+          asset.status.toLowerCase().includes(lowerSearch) 
+          // asset.assignedTo.username.toLowerCase().includes(lowerSearch)
       );
       setFilteredAssets(filtered);
     }
   }, [searchTerm, assets]);
-
   return (
     <div className="relative overflow-x-auto shadow-md sm:rounded-lg mt-8">
       {/* Top bar */}
@@ -107,6 +147,9 @@ const AssetsTable = () => {
             </svg>
           </button>
         </div>
+        <Button width="w-fit" onClick={toggleModal}>
+          Add New Asset
+        </Button>
       </div>
 
       {/* Table */}
@@ -184,6 +227,22 @@ const AssetsTable = () => {
           )}
         </tbody>
       </table>
+      <Modal
+        isOpen={isModalOpen}
+        closeModal={toggleModal}
+        title="Add New Asset"
+        description=""
+      >
+        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+          <Input
+            placeholder="Asset Name"
+            value={newAssetName}
+            onChange={(e) => setNewAssetName(e.target.value)}
+            required
+          />
+          <Button type="submit">Submit</Button>
+        </form>
+      </Modal>
     </div>
   );
 };
