@@ -20,13 +20,24 @@ const AssetsTable = () => {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [newAssetName, setNewAssetName] = useState(""); // New state for asset name
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [selectedAsset, setSelectedAsset] = useState<Asset | null>(null);
+  const [newAssetName, setNewAssetName] = useState("");
 
   const toggleModal = () => {
     setIsModalOpen(!isModalOpen);
     setNewAssetName(""); // Reset form when modal is toggled
   };
 
+  const toggleDeleteModal = (asset?: Asset) => {
+    if (asset) {
+      setSelectedAsset(asset);
+      setIsDeleteModalOpen(true);
+    } else {
+      setSelectedAsset(null);
+      setIsDeleteModalOpen(false);
+    }
+  };
   const fetchAssets = async () => {
     try {
       const userData = localStorage.getItem("userData");
@@ -75,6 +86,27 @@ const AssetsTable = () => {
       console.error("Error creating asset:", error);
     }
   };
+const handleDelete = async () => {
+    if (!selectedAsset) return;
+
+    try {
+      const userData = localStorage.getItem("userData");
+      const token = userData ? JSON.parse(userData).token : null;
+
+      await axiosInstance.delete(`/assets/${selectedAsset.id}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      toast.success("Asset deleted successfully");
+      toggleDeleteModal();
+      await fetchAssets();
+    } catch (error) {
+      console.error("Error deleting asset:", error);
+      toast.error("Failed to delete asset");
+    }
+  };
 
   useEffect(() => {
     fetchAssets();
@@ -88,8 +120,8 @@ const AssetsTable = () => {
       const filtered = assets.filter(
         (asset) =>
           asset.name.toLowerCase().includes(lowerSearch) ||
-          asset.status.toLowerCase().includes(lowerSearch) 
-          // asset.assignedTo.username.toLowerCase().includes(lowerSearch)
+          asset.status.toLowerCase().includes(lowerSearch)
+        // asset.assignedTo.username.toLowerCase().includes(lowerSearch)
       );
       setFilteredAssets(filtered);
     }
@@ -119,7 +151,7 @@ const AssetsTable = () => {
             placeholder="Search for assets"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="block pt-2 ps-10 py-2 text-sm text-gray-900 border border-blue-500 rounded-lg w-80 bg-white focus:ring-blue-500 focus:border-blue-500"
+            className="block pt-2 ps-10 py-2 text-sm text-gray-900 border border-blue-500 rounded-lg w-80 outline-none bg-white focus:ring-blue-600 focus:border-blue-700"
           />
         </div>
         <div>
@@ -207,6 +239,7 @@ const AssetsTable = () => {
                   <button
                     title="Delete"
                     className="text-red-600 hover:text-red-800"
+                    onClick={() => toggleDeleteModal(asset)}
                   >
                     <svg
                       xmlns="http://www.w3.org/2000/svg"
@@ -242,6 +275,33 @@ const AssetsTable = () => {
           />
           <Button type="submit">Submit</Button>
         </form>
+      </Modal>
+       <Modal
+        isOpen={isDeleteModalOpen}
+        closeModal={() => toggleDeleteModal()}
+        title="Delete Asset"
+        description="Are you sure you want to delete this asset? This action cannot be undone."
+      >
+        <div className="flex flex-col gap-4">
+          <div className="text-sm text-gray-600">
+            Asset Name: <span className="font-medium">{selectedAsset?.name}</span>
+          </div>
+          <div className="flex justify-end gap-3">
+            <Button
+              
+              onClick={() => toggleDeleteModal()}
+              className="bg-gray-400 hover:bg-gray-500 "
+            >
+              Cancel
+            </Button>
+            <Button
+              className="bg-red-600 hover:bg-red-700"
+              onClick={handleDelete}
+            >
+              Delete
+            </Button>
+          </div>
+        </div>
       </Modal>
     </div>
   );
