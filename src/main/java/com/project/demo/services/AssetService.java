@@ -35,14 +35,18 @@ public class AssetService {
     public Asset createAsset(AssetRequest assetRequest) {
         Asset asset = new Asset();
         asset.setName(assetRequest.getName());
-        asset.setStatus(AssetStatus.AVAILABLE);
+        if (assetRequest.getStatus() != null) {
+            asset.setStatus(AssetStatus.valueOf(assetRequest.getStatus()));
+        } else {
+            asset.setStatus(AssetStatus.Available);
+        }
         if (assetRequest.getAssignedToId() != null) {
             Optional<User> optionalUser = userRepo.findById(assetRequest.getAssignedToId());
             User user = optionalUser.orElseThrow(() -> new RuntimeException("User not found"));
             asset.setAssignedTo(user);
         }
         Asset saved = assetRepository.save(asset);
-        addHistory(saved, AssetStatus.AVAILABLE);
+        addHistory(saved, AssetStatus.Available);
         return saved;
     }
 
@@ -75,5 +79,10 @@ public class AssetService {
 
     public List<AssetHistory> getAssetHistory(Long assetId) {
         return historyRepository.findByAssetId(assetId);
+    }
+
+    public List<User> getEmployees() {
+
+        return userRepo.findAllByRole("USER");
     }
 }

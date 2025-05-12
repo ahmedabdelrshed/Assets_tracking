@@ -1,9 +1,9 @@
 package com.project.demo.enums;
 
+import jakarta.persistence.criteria.CriteriaBuilder.In;
+
 public enum AssetStatus {
-    AVAILABLE,
-    IN_USE,
-    UNDER_MAINTENANCE,
-    RETIRED,
-    LOST
+    Available,
+    In_Use,
+    Under_Maintenance,
 }

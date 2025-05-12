@@ -14,8 +14,13 @@ interface Asset {
   };
 }
 
+interface Employee {
+  id: number;
+  username: string;
+}
 const AssetsTable = () => {
   const [assets, setAssets] = useState<Asset[]>([]);
+  const [employees, setEmployees] = useState<Employee[]>([]);
   const [filteredAssets, setFilteredAssets] = useState<Asset[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
@@ -23,6 +28,8 @@ const AssetsTable = () => {
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [selectedAsset, setSelectedAsset] = useState<Asset | null>(null);
   const [newAssetName, setNewAssetName] = useState("");
+  const [newAssetStatus, setNewAssetStatus] = useState("");
+  const [newAssetAssignedTo, setNewAssetAssignedTo] = useState<number>();
 
   const toggleModal = () => {
     setIsModalOpen(!isModalOpen);
@@ -56,6 +63,21 @@ const AssetsTable = () => {
       setLoading(false);
     }
   };
+  const fetchEmployees = async () => {
+    try {
+      const userData = localStorage.getItem("userData");
+      const token = userData ? JSON.parse(userData).token : null;
+      const response = await axiosInstance.get("/assets/get_employees", {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      console.log(response.data);
+      setEmployees(response.data);
+    } catch (error) {
+      console.error("Error fetching employees:", error);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -63,21 +85,29 @@ const AssetsTable = () => {
     try {
       const userData = localStorage.getItem("userData");
       const token = userData ? JSON.parse(userData).token : null;
+      if (!newAssetName || !newAssetStatus) {
+        toast.error("Please fill in all required fields");
+        return;
+      }
 
-      await axiosInstance.post(
-        "/assets",
-        { name: newAssetName },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
+      const requestBody = {
+        name: newAssetName,
+        status: newAssetStatus,
+        assignedToId: newAssetAssignedTo || null, // If no employee is selected, send null
+      };
+
+      await axiosInstance.post("/assets", requestBody, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
 
       toast.success("Asset created successfully");
 
       // Clear form and close modal
       setNewAssetName("");
+      setNewAssetStatus("");
+      setNewAssetAssignedTo(undefined);
       toggleModal();
 
       // Refresh assets list
@@ -86,7 +116,7 @@ const AssetsTable = () => {
       console.error("Error creating asset:", error);
     }
   };
-const handleDelete = async () => {
+  const handleDelete = async () => {
     if (!selectedAsset) return;
 
     try {
@@ -110,6 +140,7 @@ const handleDelete = async () => {
 
   useEffect(() => {
     fetchAssets();
+    fetchEmployees();
   }, []);
 
   useEffect(() => {
@@ -273,10 +304,42 @@ const handleDelete = async () => {
             onChange={(e) => setNewAssetName(e.target.value)}
             required
           />
+          <div className="flex items-center gap-4">
+            <label htmlFor="status">Status:</label>
+            <select
+              id="status"
+              className="border border-gray-300 rounded-lg p-2"
+              value={newAssetStatus}
+              onChange={(e) => setNewAssetStatus(e.target.value)}
+            >
+              <option value="">Select Status</option>
+              <option value="Available">Available</option>
+              <option value="In_Use">In Use</option>
+              <option value="Under_Maintenance">Maintenance</option>
+            </select>
+          </div>
+          <div className="flex items-center gap-4">
+            <label htmlFor="employee">Assign to:</label>
+            <select
+              id="employee"
+              className="border border-gray-300 rounded-lg p-2"
+              value={newAssetAssignedTo}
+              onChange={(e) => setNewAssetAssignedTo(parseInt(e.target.value))}
+            >
+              <option value="" disabled selected>
+                Select Employee
+              </option>
+              {employees.map((employee) => (
+                <option key={employee.id} value={employee.id}>
+                  {employee.username}
+                </option>
+              ))}
+            </select>
+          </div>
           <Button type="submit">Submit</Button>
         </form>
       </Modal>
-       <Modal
+      <Modal
         isOpen={isDeleteModalOpen}
         closeModal={() => toggleDeleteModal()}
         title="Delete Asset"
@@ -284,11 +347,11 @@ const handleDelete = async () => {
       >
         <div className="flex flex-col gap-4">
           <div className="text-sm text-gray-600">
-            Asset Name: <span className="font-medium">{selectedAsset?.name}</span>
+            Asset Name:{" "}
+            <span className="font-medium">{selectedAsset?.name}</span>
           </div>
           <div className="flex justify-end gap-3">
             <Button
-              
               onClick={() => toggleDeleteModal()}
               className="bg-gray-400 hover:bg-gray-500 "
             >
