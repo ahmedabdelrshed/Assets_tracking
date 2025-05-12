@@ -55,6 +55,7 @@ public class AssetService {
         asset.setName(assetRequest.getName());
         if (assetRequest.getStatus() != null) {
             asset.setStatus(AssetStatus.valueOf(assetRequest.getStatus()));
+            addHistory(asset, AssetStatus.valueOf(assetRequest.getStatus()));
         } else {
             asset.setStatus(AssetStatus.Available);
         }
@@ -63,6 +64,7 @@ public class AssetService {
             User user = optionalUser.orElseThrow(() -> new RuntimeException("User not found"));
             asset.setAssignedTo(user);
         }
+
         return assetRepository.save(asset);
     }
 
@@ -93,5 +95,12 @@ public class AssetService {
     public List<User> getEmployees() {
 
         return userRepo.findAllByRole("USER");
+    }
+
+    public List<Asset> getAssetsByUserId(Long userId) {
+        List<Asset> assets = assetRepository.findAll();
+        return assets.stream()
+                .filter(asset -> asset.getAssignedTo() != null && asset.getAssignedTo().getId().equals(userId))
+                .toList();
     }
 }

@@ -22,7 +22,7 @@ public class AssetController {
     @CrossOrigin("*")
     @GetMapping
     public List<Asset> getAllAssets() {
-        return assetService.getAllAssets();
+        return assetService.getAllAssets(); 
     }
 
     @GetMapping("/{id}")
@@ -61,6 +61,10 @@ public class AssetController {
     @GetMapping("/get_employees")
     public List<User> getEmployees() {
         return assetService.getEmployees();
+    }
+    @GetMapping("/asset_user/{id}")
+    public List<Asset> getAssetsByUserId(@PathVariable Long id) {
+        return assetService.getAssetsByUserId(id);
     }
 
 }

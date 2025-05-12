@@ -4,6 +4,7 @@ import Button from "../ui/Button";
 import Modal from "../ui/Modal";
 import Input from "../ui/Input";
 import toast from "react-hot-toast";
+import { useNavigate } from "react-router-dom";
 
 interface Asset {
   id: number;
@@ -20,6 +21,7 @@ interface Employee {
   username: string;
 }
 const AssetsTable = () => {
+  const navigate = useNavigate();
   const [assets, setAssets] = useState<Asset[]>([]);
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [filteredAssets, setFilteredAssets] = useState<Asset[]>([]);
@@ -34,9 +36,31 @@ const AssetsTable = () => {
   const [isUpdateModalOpen, setIsUpdateModalOpen] = useState(false);
   const [updatedStatus, setUpdatedStatus] = useState("");
   const [updatedAssignedTo, setUpdatedAssignedTo] = useState<number>();
-    const [updatedName, setUpdatedName] = useState("");
+  const [updatedName, setUpdatedName] = useState("");
+  const [isStatusFilterOpen, setIsStatusFilterOpen] = useState(false);
+  const [selectedStatus, setSelectedStatus] = useState<string>("");
+  const userData = localStorage.getItem("userData");
+  if (!userData) {
+    navigate("/login");
+  }
+  const role = userData ? JSON.parse(userData).role : null;
 
+  // Status options array
+  const statusOptions = ["Available", "In_Use", "Under_Maintenance"];
 
+  // Add filter by status function
+  const handleStatusFilter = (status: string) => {
+    setSelectedStatus(status);
+    if (status === "") {
+      // If no status selected, show all assets
+      setFilteredAssets(assets);
+    } else {
+      // Filter assets by selected status
+      const filtered = assets.filter((asset) => asset.status === status);
+      setFilteredAssets(filtered);
+    }
+    setIsStatusFilterOpen(false); // Close dropdown after selection
+  };
   const toggleModal = () => {
     setIsModalOpen(!isModalOpen);
     setNewAssetName(""); // Reset form when modal is toggled
@@ -51,7 +75,7 @@ const AssetsTable = () => {
       setIsDeleteModalOpen(false);
     }
   };
-   const toggleUpdateModal = (asset?: Asset) => {
+  const toggleUpdateModal = (asset?: Asset) => {
     if (asset) {
       setSelectedAsset(asset);
       setUpdatedName(asset.name); // Initialize with current name
@@ -72,6 +96,25 @@ const AssetsTable = () => {
       const token = userData ? JSON.parse(userData).token : null;
       setLoading(true);
       const response = await axiosInstance.get("/assets", {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      setAssets(response.data);
+      setFilteredAssets(response.data);
+    } catch (error) {
+      console.error("Error fetching assets:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+  const fetchAssets_employee = async () => {
+    try {
+      const userData = localStorage.getItem("userData");
+      const token = userData ? JSON.parse(userData).token : null;
+      const id = userData ? JSON.parse(userData).id : null;
+      setLoading(true);
+      const response = await axiosInstance.get(`/assets/asset_user/${id}`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -178,45 +221,50 @@ const AssetsTable = () => {
         assignedToId: updatedAssignedTo || null,
       };
 
-      await axiosInstance.put(
-        `/assets/${selectedAsset.id}`,
-        requestBody,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
+      await axiosInstance.put(`/assets/${selectedAsset.id}`, requestBody, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
 
       toast.success("Asset updated successfully");
       toggleUpdateModal();
-      await fetchAssets();
+      if (role === "ADMIN") await fetchAssets();
+      else await fetchAssets_employee();
     } catch (error) {
       console.error("Error updating asset:", error);
       toast.error("Failed to update asset");
     }
   };
 
-
   useEffect(() => {
-    fetchAssets();
-    fetchEmployees();
-  }, []);
-
-  useEffect(() => {
-    if (searchTerm.trim() === "") {
-      setFilteredAssets(assets);
+    if (role === "ADMIN") {
+      fetchAssets();
+      fetchEmployees();
     } else {
+      fetchAssets_employee();
+    }
+  }, [role]);
+  useEffect(() => {
+    let filtered = assets;
+
+    // Apply search term filter
+    if (searchTerm.trim() !== "") {
       const lowerSearch = searchTerm.toLowerCase();
-      const filtered = assets.filter(
+      filtered = filtered.filter(
         (asset) =>
           asset.name.toLowerCase().includes(lowerSearch) ||
           asset.status.toLowerCase().includes(lowerSearch)
-        // asset.assignedTo.username.toLowerCase().includes(lowerSearch)
       );
-      setFilteredAssets(filtered);
     }
-  }, [searchTerm, assets]);
+
+    // Apply status filter
+    if (selectedStatus !== "") {
+      filtered = filtered.filter((asset) => asset.status === selectedStatus);
+    }
+
+    setFilteredAssets(filtered);
+  }, [searchTerm, assets, selectedStatus]);
   return (
     <div className="relative overflow-x-auto shadow-md sm:rounded-lg mt-8">
       {/* Top bar */}
@@ -245,15 +293,20 @@ const AssetsTable = () => {
             className="block pt-2 ps-10 py-2 text-sm text-gray-900 border border-blue-500 rounded-lg w-80 outline-none bg-white focus:ring-blue-600 focus:border-blue-700"
           />
         </div>
-        <div>
+        <div className="relative">
           <label htmlFor="" className="me-8">
             Filtered by
           </label>
           <button
-            className="inline-flex items-center text-blue-600 bg-white border border-blue-500 hover:bg-blue-100 focus:ring-4 focus:ring-blue-200 font-medium rounded-lg text-sm px-3 py-1.5"
+            className={`inline-flex items-center ${
+              selectedStatus
+                ? "text-white bg-blue-600"
+                : "text-blue-600 bg-white"
+            } border border-blue-500  focus:ring-4 focus:ring-blue-200 font-medium rounded-lg text-sm px-3 py-1.5`}
             type="button"
+            onClick={() => setIsStatusFilterOpen(!isStatusFilterOpen)}
           >
-            Status
+            {selectedStatus || "Status"}
             <svg
               className="w-2.5 h-2.5 ms-2.5"
               aria-hidden="true"
@@ -269,10 +322,38 @@ const AssetsTable = () => {
               />
             </svg>
           </button>
+
+          {/* Status Filter Dropdown */}
+          {isStatusFilterOpen && (
+            <div className="absolute z-10 mt-2 bg-white divide-y divide-gray-100 rounded-lg shadow w-44">
+              <ul className="py-2 text-sm text-gray-700">
+                <li>
+                  <button
+                    className="block px-4 py-2 hover:bg-gray-100 w-full text-left"
+                    onClick={() => handleStatusFilter("")}
+                  >
+                    All
+                  </button>
+                </li>
+                {statusOptions.map((status) => (
+                  <li key={status}>
+                    <button
+                      className="block px-4 py-2 hover:bg-gray-100 w-full text-left"
+                      onClick={() => handleStatusFilter(status)}
+                    >
+                      {status.replace("_", " ")}
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
         </div>
-        <Button width="w-fit" onClick={toggleModal}>
-          Add New Asset
-        </Button>
+        {role === "ADMIN" && (
+          <Button width="w-fit" onClick={toggleModal}>
+            Add New Asset
+          </Button>
+        )}
       </div>
 
       {/* Table */}
@@ -312,7 +393,7 @@ const AssetsTable = () => {
                   <button
                     title="Edit"
                     className="text-blue-600 hover:text-blue-800"
-                     onClick={() => toggleUpdateModal(asset)}
+                    onClick={() => toggleUpdateModal(asset)}
                   >
                     <svg
                       xmlns="http://www.w3.org/2000/svg"
@@ -328,24 +409,26 @@ const AssetsTable = () => {
                       />
                     </svg>
                   </button>
-                  <button
-                    title="Delete"
-                    className="text-red-600 hover:text-red-800"
-                    onClick={() => toggleDeleteModal(asset)}
-                  >
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      className="w-5 h-5"
-                      viewBox="0 0 20 20"
-                      fill="currentColor"
+                  {role === "ADMIN" && (
+                    <button
+                      title="Delete"
+                      className="text-red-600 hover:text-red-800"
+                      onClick={() => toggleDeleteModal(asset)}
                     >
-                      <path
-                        fillRule="evenodd"
-                        d="M9 2a1 1 0 0 0-1 1v1H5a1 1 0 0 0 0 2h10a1 1 0 1 0 0-2h-3V3a1 1 0 0 0-1-1H9zM4 7h12l-.867 10.142A2 2 0 0 1 13.138 19H6.862a2 2 0 0 1-1.995-1.858L4 7z"
-                        clipRule="evenodd"
-                      />
-                    </svg>
-                  </button>
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        className="w-5 h-5"
+                        viewBox="0 0 20 20"
+                        fill="currentColor"
+                      >
+                        <path
+                          fillRule="evenodd"
+                          d="M9 2a1 1 0 0 0-1 1v1H5a1 1 0 0 0 0 2h10a1 1 0 1 0 0-2h-3V3a1 1 0 0 0-1-1H9zM4 7h12l-.867 10.142A2 2 0 0 1 13.138 19H6.862a2 2 0 0 1-1.995-1.858L4 7z"
+                          clipRule="evenodd"
+                        />
+                      </svg>
+                    </button>
+                  )}
                 </td>
               </tr>
             ))
@@ -428,73 +511,80 @@ const AssetsTable = () => {
         </div>
       </Modal>
       <Modal
-    isOpen={isUpdateModalOpen}
-    closeModal={() => toggleUpdateModal()}
-    title="Update Asset"
-    description=""
-  >
-    <form onSubmit={handleUpdate} className="flex flex-col gap-4">
-      <div className="flex flex-col gap-4">
-        <Input
-          placeholder="Asset Name"
-          value={updatedName}
-          onChange={(e) => setUpdatedName(e.target.value)}
-          required
-        />
-        
-        <div className="flex items-center gap-4">
-          <label htmlFor="updateStatus">Status:</label>
-          <select
-            id="updateStatus"
-            className="border border-gray-300 rounded-lg p-2 flex-1"
-            value={updatedStatus}
-            onChange={(e) => setUpdatedStatus(e.target.value)}
-            required
-          >
-            <option value="">Select Status</option>
-            <option value="Available">Available</option>
-            <option value="In_Use">In Use</option>
-            <option value="Under_Maintenance">Maintenance</option>
-          </select>
-        </div>
+        isOpen={isUpdateModalOpen}
+        closeModal={() => toggleUpdateModal()}
+        title="Update Asset"
+        description=""
+      >
+        <form onSubmit={handleUpdate} className="flex flex-col gap-4">
+          <div className="flex flex-col gap-4">
+            {role === "ADMIN" && (
+              <Input
+                placeholder="Asset Name"
+                value={updatedName}
+                onChange={(e) => setUpdatedName(e.target.value)}
+                required
+              />
+            )}
 
-        <div className="flex items-center gap-4">
-          <label htmlFor="updateEmployee">Assign to:</label>
-          <select
-            id="updateEmployee"
-            className="border border-gray-300 rounded-lg p-2 flex-1"
-            value={updatedAssignedTo}
-            onChange={(e) => 
-              setUpdatedAssignedTo(e.target.value ? parseInt(e.target.value) : undefined)
-            }
-          >
-            <option value="">None</option>
-            {employees.map((employee) => (
-              <option key={employee.id} value={employee.id}>
-                {employee.username}
-              </option>
-            ))}
-          </select>
-        </div>
-      </div>
+            <div className="flex items-center gap-4">
+              <label htmlFor="updateStatus">Status:</label>
+              <select
+                id="updateStatus"
+                className="border border-gray-300 rounded-lg p-2 flex-1"
+                value={updatedStatus}
+                onChange={(e) => setUpdatedStatus(e.target.value)}
+                required
+              >
+                <option value="">Select Status</option>
+                {role === "ADMIN" && (
+                  <>
+                    <option value="In_Use">In Use</option>
+                  </>
+                )}
+                <option value="Available">Available</option>
+                <option value="Under_Maintenance">Maintenance</option>
+              </select>
+            </div>
 
-      <div className="flex justify-end gap-3 mt-4">
-        <Button
-          onClick={() => toggleUpdateModal()}
-          className="bg-gray-400 hover:bg-gray-500"
-          type="button"
-        >
-          Cancel
-        </Button>
-        <Button
-          type="submit"
-          className="bg-blue-600 hover:bg-blue-700"
-        >
-          Update
-        </Button>
-      </div>
-    </form>
-  </Modal>
+            {role === "ADMIN" && (
+              <div className="flex items-center gap-4">
+                <label htmlFor="updateEmployee">Assign to:</label>
+                <select
+                  id="updateEmployee"
+                  className="border border-gray-300 rounded-lg p-2 flex-1"
+                  value={updatedAssignedTo}
+                  onChange={(e) =>
+                    setUpdatedAssignedTo(
+                      e.target.value ? parseInt(e.target.value) : undefined
+                    )
+                  }
+                >
+                  <option value="">None</option>
+                  {employees.map((employee) => (
+                    <option key={employee.id} value={employee.id}>
+                      {employee.username}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+          </div>
+
+          <div className="flex justify-end gap-3 mt-4">
+            <Button
+              onClick={() => toggleUpdateModal()}
+              className="bg-gray-400 hover:bg-gray-500"
+              type="button"
+            >
+              Cancel
+            </Button>
+            <Button type="submit" className="bg-blue-600 hover:bg-blue-700">
+              Update
+            </Button>
+          </div>
+        </form>
+      </Modal>
     </div>
   );
 };
