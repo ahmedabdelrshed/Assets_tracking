@@ -50,10 +50,19 @@ public class AssetService {
         return saved;
     }
 
-    public Asset updateAsset(Long id, Asset updatedAsset) {
+    public Asset updateAsset(Long id, AssetRequest assetRequest) {
         Asset asset = getAssetById(id);
-        asset.setName(updatedAsset.getName());
-        asset.setAssignedTo(updatedAsset.getAssignedTo());
+        asset.setName(assetRequest.getName());
+        if (assetRequest.getStatus() != null) {
+            asset.setStatus(AssetStatus.valueOf(assetRequest.getStatus()));
+        } else {
+            asset.setStatus(AssetStatus.Available);
+        }
+        if (assetRequest.getAssignedToId() != null) {
+            Optional<User> optionalUser = userRepo.findById(assetRequest.getAssignedToId());
+            User user = optionalUser.orElseThrow(() -> new RuntimeException("User not found"));
+            asset.setAssignedTo(user);
+        }
         return assetRepository.save(asset);
     }
 

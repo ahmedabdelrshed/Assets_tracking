@@ -11,6 +11,7 @@ interface Asset {
   status: string;
   assignedTo: {
     username: string;
+    id: number;
   };
 }
 
@@ -30,6 +31,11 @@ const AssetsTable = () => {
   const [newAssetName, setNewAssetName] = useState("");
   const [newAssetStatus, setNewAssetStatus] = useState("");
   const [newAssetAssignedTo, setNewAssetAssignedTo] = useState<number>();
+  const [isUpdateModalOpen, setIsUpdateModalOpen] = useState(false);
+  const [updatedStatus, setUpdatedStatus] = useState("");
+  const [updatedAssignedTo, setUpdatedAssignedTo] = useState<number>();
+    const [updatedName, setUpdatedName] = useState("");
+
 
   const toggleModal = () => {
     setIsModalOpen(!isModalOpen);
@@ -43,6 +49,21 @@ const AssetsTable = () => {
     } else {
       setSelectedAsset(null);
       setIsDeleteModalOpen(false);
+    }
+  };
+   const toggleUpdateModal = (asset?: Asset) => {
+    if (asset) {
+      setSelectedAsset(asset);
+      setUpdatedName(asset.name); // Initialize with current name
+      setUpdatedStatus(asset.status);
+      setUpdatedAssignedTo(asset.assignedTo?.id);
+      setIsUpdateModalOpen(true);
+    } else {
+      setSelectedAsset(null);
+      setUpdatedName("");
+      setUpdatedStatus("");
+      setUpdatedAssignedTo(undefined);
+      setIsUpdateModalOpen(false);
     }
   };
   const fetchAssets = async () => {
@@ -137,6 +158,45 @@ const AssetsTable = () => {
       toast.error("Failed to delete asset");
     }
   };
+  const handleUpdate = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!selectedAsset) return;
+
+    try {
+      const userData = localStorage.getItem("userData");
+      const token = userData ? JSON.parse(userData).token : null;
+
+      if (!updatedName || !updatedStatus) {
+        toast.error("Please fill in all required fields");
+        return;
+      }
+
+      const requestBody = {
+        name: updatedName,
+        status: updatedStatus,
+        assignedToId: updatedAssignedTo || null,
+      };
+
+      await axiosInstance.put(
+        `/assets/${selectedAsset.id}`,
+        requestBody,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      toast.success("Asset updated successfully");
+      toggleUpdateModal();
+      await fetchAssets();
+    } catch (error) {
+      console.error("Error updating asset:", error);
+      toast.error("Failed to update asset");
+    }
+  };
+
 
   useEffect(() => {
     fetchAssets();
@@ -252,6 +312,7 @@ const AssetsTable = () => {
                   <button
                     title="Edit"
                     className="text-blue-600 hover:text-blue-800"
+                     onClick={() => toggleUpdateModal(asset)}
                   >
                     <svg
                       xmlns="http://www.w3.org/2000/svg"
@@ -366,6 +427,74 @@ const AssetsTable = () => {
           </div>
         </div>
       </Modal>
+      <Modal
+    isOpen={isUpdateModalOpen}
+    closeModal={() => toggleUpdateModal()}
+    title="Update Asset"
+    description=""
+  >
+    <form onSubmit={handleUpdate} className="flex flex-col gap-4">
+      <div className="flex flex-col gap-4">
+        <Input
+          placeholder="Asset Name"
+          value={updatedName}
+          onChange={(e) => setUpdatedName(e.target.value)}
+          required
+        />
+        
+        <div className="flex items-center gap-4">
+          <label htmlFor="updateStatus">Status:</label>
+          <select
+            id="updateStatus"
+            className="border border-gray-300 rounded-lg p-2 flex-1"
+            value={updatedStatus}
+            onChange={(e) => setUpdatedStatus(e.target.value)}
+            required
+          >
+            <option value="">Select Status</option>
+            <option value="Available">Available</option>
+            <option value="In_Use">In Use</option>
+            <option value="Under_Maintenance">Maintenance</option>
+          </select>
+        </div>
+
+        <div className="flex items-center gap-4">
+          <label htmlFor="updateEmployee">Assign to:</label>
+          <select
+            id="updateEmployee"
+            className="border border-gray-300 rounded-lg p-2 flex-1"
+            value={updatedAssignedTo}
+            onChange={(e) => 
+              setUpdatedAssignedTo(e.target.value ? parseInt(e.target.value) : undefined)
+            }
+          >
+            <option value="">None</option>
+            {employees.map((employee) => (
+              <option key={employee.id} value={employee.id}>
+                {employee.username}
+              </option>
+            ))}
+          </select>
+        </div>
+      </div>
+
+      <div className="flex justify-end gap-3 mt-4">
+        <Button
+          onClick={() => toggleUpdateModal()}
+          className="bg-gray-400 hover:bg-gray-500"
+          type="button"
+        >
+          Cancel
+        </Button>
+        <Button
+          type="submit"
+          className="bg-blue-600 hover:bg-blue-700"
+        >
+          Update
+        </Button>
+      </div>
+    </form>
+  </Modal>
     </div>
   );
 };
