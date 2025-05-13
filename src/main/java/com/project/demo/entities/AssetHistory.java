@@ -29,7 +29,6 @@ public class AssetHistory {
     @Enumerated(EnumType.STRING)
     private AssetStatus status;
 
-    private String action; // e.g., "Assigned to user", "Status changed", "Edited", etc.
 
     private LocalDateTime timestamp;
 

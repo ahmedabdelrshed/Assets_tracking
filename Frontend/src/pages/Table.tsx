@@ -20,6 +20,11 @@ interface Employee {
   id: number;
   username: string;
 }
+interface AssetHistory {
+  id: number;
+  status: string;
+  timestamp: string;
+}
 const AssetsTable = () => {
   const navigate = useNavigate();
   const [assets, setAssets] = useState<Asset[]>([]);
@@ -44,7 +49,48 @@ const AssetsTable = () => {
     navigate("/login");
   }
   const role = userData ? JSON.parse(userData).role : null;
+  const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false);
+  const [assetHistory, setAssetHistory] = useState<AssetHistory[]>([]);
+  const [loadingHistory, setLoadingHistory] = useState(false);
 
+  // Add function to fetch and display history
+  const handleShowHistory = async (assetId: number) => {
+    try {
+      setLoadingHistory(true);
+      const userData = localStorage.getItem("userData");
+      const token = userData ? JSON.parse(userData).token : null;
+
+      const response = await axiosInstance.get(`/assets/${assetId}/history`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      setAssetHistory(response.data);
+      setIsHistoryModalOpen(true);
+    } catch (error) {
+      console.error("Error fetching asset history:", error);
+      toast.error("Failed to fetch asset history");
+    } finally {
+      setLoadingHistory(false);
+    }
+  };
+  const formatDate = (date: string) => {
+    return new Date(date).toLocaleString("en-US", {
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+      hour12: false,
+    });
+  };
+  // Add toggle function for history modal
+  const toggleHistoryModal = () => {
+    setIsHistoryModalOpen(false);
+    setAssetHistory([]);
+  };
   // Status options array
   const statusOptions = ["Available", "In_Use", "Under_Maintenance"];
 
@@ -410,24 +456,47 @@ const AssetsTable = () => {
                     </svg>
                   </button>
                   {role === "ADMIN" && (
-                    <button
-                      title="Delete"
-                      className="text-red-600 hover:text-red-800"
-                      onClick={() => toggleDeleteModal(asset)}
-                    >
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        className="w-5 h-5"
-                        viewBox="0 0 20 20"
-                        fill="currentColor"
+                    <>
+                      <button
+                        title="History"
+                        className="text-gray-600 hover:text-gray-800"
+                        onClick={() => {
+                          setSelectedAsset(asset);
+                          handleShowHistory(asset.id);
+                        }}
                       >
-                        <path
-                          fillRule="evenodd"
-                          d="M9 2a1 1 0 0 0-1 1v1H5a1 1 0 0 0 0 2h10a1 1 0 1 0 0-2h-3V3a1 1 0 0 0-1-1H9zM4 7h12l-.867 10.142A2 2 0 0 1 13.138 19H6.862a2 2 0 0 1-1.995-1.858L4 7z"
-                          clipRule="evenodd"
-                        />
-                      </svg>
-                    </button>
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          className="w-5 h-5"
+                          viewBox="0 0 20 20"
+                          fill="currentColor"
+                        >
+                          <path
+                            fillRule="evenodd"
+                            d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z"
+                            clipRule="evenodd"
+                          />
+                        </svg>
+                      </button>
+                      <button
+                        title="Delete"
+                        className="text-red-600 hover:text-red-800"
+                        onClick={() => toggleDeleteModal(asset)}
+                      >
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          className="w-5 h-5"
+                          viewBox="0 0 20 20"
+                          fill="currentColor"
+                        >
+                          <path
+                            fillRule="evenodd"
+                            d="M9 2a1 1 0 0 0-1 1v1H5a1 1 0 0 0 0 2h10a1 1 0 1 0 0-2h-3V3a1 1 0 0 0-1-1H9zM4 7h12l-.867 10.142A2 2 0 0 1 13.138 19H6.862a2 2 0 0 1-1.995-1.858L4 7z"
+                            clipRule="evenodd"
+                          />
+                        </svg>
+                      </button>
+                    </>
                   )}
                 </td>
               </tr>
@@ -584,6 +653,60 @@ const AssetsTable = () => {
             </Button>
           </div>
         </form>
+      </Modal>
+      {/* History Modal */}
+      {/* History Modal */}
+      <Modal
+        isOpen={isHistoryModalOpen}
+        closeModal={toggleHistoryModal}
+        title={`Asset History - ${selectedAsset?.name}`}
+        description=""
+      >
+        <div className="flex flex-col gap-4">
+          {loadingHistory ? (
+            <div className="text-center py-4">Loading history...</div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm text-left text-gray-700">
+                <thead className="text-xs text-white uppercase bg-blue-600">
+                  <tr>
+                    <th className="px-4 py-2">Status</th>
+                    <th className="px-4 py-2">Start Date</th>
+                    <th className="px-4 py-2">End Date</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {assetHistory.map((history, index) => (
+                    <tr
+                      key={history.id}
+                      className="bg-white border-b hover:bg-blue-50"
+                    >
+                      <td className="px-4 py-2">
+                        {history.status.replace("_", " ")}
+                      </td>
+                      <td className="px-4 py-2">
+                        {formatDate(history.timestamp)}
+                      </td>
+                      <td className="px-4 py-2">
+                        {index < assetHistory.length - 1
+                          ? formatDate(assetHistory[index + 1].timestamp)
+                          : "Current"}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+          <div className="flex justify-end mt-4">
+            <Button
+              onClick={toggleHistoryModal}
+              className="bg-gray-400 hover:bg-gray-500"
+            >
+              Close
+            </Button>
+          </div>
+        </div>
       </Modal>
     </div>
   );

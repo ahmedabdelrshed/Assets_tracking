@@ -1,6 +1,5 @@
 package com.project.demo.controllers;
 
-import com.project.demo.enums.AssetStatus;
 import com.project.demo.dtos.assetDtos.AssetRequest;
 import com.project.demo.entities.Asset;
 import com.project.demo.entities.AssetHistory;
@@ -46,13 +45,7 @@ public class AssetController {
         assetService.deleteAsset(id);
     }
 
-    @PutMapping("/{id}/status")
-    public Asset updateAssetStatus(
-            @PathVariable Long id,
-            @RequestParam AssetStatus status,
-            @RequestParam(required = false) String note) {
-        return assetService.updateAssetStatus(id, status);
-    }
+    
 
     @GetMapping("/{id}/history")
     public List<AssetHistory> getAssetHistory(@PathVariable Long id) {
