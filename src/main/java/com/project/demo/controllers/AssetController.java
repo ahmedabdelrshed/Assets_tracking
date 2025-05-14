@@ -51,10 +51,7 @@ public class AssetController {
     public List<AssetHistory> getAssetHistory(@PathVariable Long id) {
         return assetService.getAssetHistory(id);
     }
-    @GetMapping("/get_employees")
-    public List<User> getEmployees() {
-        return assetService.getEmployees();
-    }
+   
     @GetMapping("/asset_user/{id}")
     public List<Asset> getAssetsByUserId(@PathVariable Long id) {
         return assetService.getAssetsByUserId(id);

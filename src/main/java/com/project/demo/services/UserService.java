@@ -7,12 +7,15 @@ import com.project.demo.entities.User;
 import com.project.demo.repository.UserRepository;
 import com.project.demo.utils.JwtUtil;
 import lombok.RequiredArgsConstructor;
+
+import java.util.List;
+
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 @Service
 @RequiredArgsConstructor
-public class AuthService {
+public class UserService {
     private final UserRepository userRepo;
     private final PasswordEncoder passwordEncoder;
     private final JwtUtil jwtUtil;
@@ -37,6 +40,11 @@ public class AuthService {
 
         String token = jwtUtil.generateToken(user.getUsername());
 
-        return new AuthResponse(token, user.getId(),user.getRole());
+        return new AuthResponse(token, user.getId(), user.getRole());
+    }
+
+    public List<User> getEmployees() {
+
+        return userRepo.findAllByRole("USER");
     }
 }

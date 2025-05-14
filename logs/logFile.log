@@ -1,0 +1,48 @@
+2025-05-14 08:10:50 - Starting DemoApplication using Java 19 with PID 25296 (C:\Users\Tech Shop\Desktop\projectSw\demo\target\classes started by Ahmed in C:\Users\Tech Shop\Desktop\projectSw\demo)
+2025-05-14 08:10:50 - No active profile set, falling back to 1 default profile: "default"
+2025-05-14 08:10:51 - Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+2025-05-14 08:10:51 - Finished Spring Data repository scanning in 15 ms. Found 3 JPA repository interfaces.
+2025-05-14 08:10:51 - Tomcat initialized with port 8080 (http)
+2025-05-14 08:10:51 - Starting service [Tomcat]
+2025-05-14 08:10:51 - Starting Servlet engine: [Apache Tomcat/10.1.40]
+2025-05-14 08:10:51 - Initializing Spring embedded WebApplicationContext
+2025-05-14 08:10:51 - Root WebApplicationContext: initialization completed in 377 ms
+2025-05-14 08:10:51 - HHH000204: Processing PersistenceUnitInfo [name: default]
+2025-05-14 08:10:51 - HHH000026: Second-level cache disabled
+2025-05-14 08:10:51 - No LoadTimeWeaver setup: ignoring JPA class transformer
+2025-05-14 08:10:51 - HikariPool-13 - Starting...
+2025-05-14 08:10:51 - HikariPool-13 - Added connection com.mysql.cj.jdbc.ConnectionImpl@186f84c9
+2025-05-14 08:10:51 - HikariPool-13 - Start completed.
+2025-05-14 08:10:51 - HHH000511: The 5.5.5 version for [org.hibernate.dialect.MySQLDialect] is no longer supported, hence certain features may not work properly. The minimum supported version is 8.0.0. Check the community dialects project for available legacy versions.
+2025-05-14 08:10:51 - HHH10001005: Database info:
+	Database JDBC URL [Connecting through datasource 'HikariDataSource (HikariPool-13)']
+	Database driver: undefined/unknown
+	Database version: 5.5.5
+	Autocommit mode: undefined/unknown
+	Isolation level: undefined/unknown
+	Minimum pool size: undefined/unknown
+	Maximum pool size: undefined/unknown
+2025-05-14 08:10:51 - HHH000489: No JTA platform available (set 'hibernate.transaction.jta.platform' to enable JTA platform integration)
+2025-05-14 08:10:51 - Initialized JPA EntityManagerFactory for persistence unit 'default'
+2025-05-14 08:10:51 - spring.jpa.open-in-view is enabled by default. Therefore, database queries may be performed during view rendering. Explicitly configure spring.jpa.open-in-view to disable this warning
+2025-05-14 08:10:51 - 
+
+Using generated security password: 31061b57-b554-4e37-b5e5-9f40693c5dc8
+
+This generated password is for development use only. Your security configuration must be updated before running your application in production.
+
+2025-05-14 08:10:51 - Global AuthenticationManager configured with UserDetailsService bean with name inMemoryUserDetailsManager
+2025-05-14 08:10:52 - LiveReload server is running on port 35729
+2025-05-14 08:10:52 - Tomcat started on port 8080 (http) with context path '/'
+2025-05-14 08:10:52 - Started DemoApplication in 1.259 seconds (process running for 1226.127)
+2025-05-14 08:10:52 - Condition evaluation unchanged
+2025-05-14 08:12:01 - Initializing Spring DispatcherServlet 'dispatcherServlet'
+2025-05-14 08:12:01 - Initializing Servlet 'dispatcherServlet'
+2025-05-14 08:12:01 - Completed initialization in 2 ms
+2025-05-14 08:12:01 - Started execution of AssetController.getAllAssets at 2025-05-134 08:12:01
+2025-05-14 08:12:01 - Started execution of UserController.getEmployees at 2025-05-134 08:12:01
+2025-05-14 08:12:01 - UserController.getEmployees executed in 13 ms
+2025-05-14 08:12:01 - Completed execution of UserController.getEmployees at 2025-05-134 08:12:01
+2025-05-14 08:12:01 - AssetController.getAllAssets executed in 15 ms
+2025-05-14 08:12:01 - Completed execution of AssetController.getAllAssets at 2025-05-134 08:12:01
+2025-05-14 08:12:01 - User: admin@gmail.com, Action: getAllAssets, Time: 2025-05-14T08:12:01.866461400, Method: AssetController.getAllAssets

@@ -177,7 +177,7 @@ const AssetsTable = () => {
     try {
       const userData = localStorage.getItem("userData");
       const token = userData ? JSON.parse(userData).token : null;
-      const response = await axiosInstance.get("/assets/get_employees", {
+      const response = await axiosInstance.get("/auth/get_employees", {
         headers: {
           Authorization: `Bearer ${token}`,
         },

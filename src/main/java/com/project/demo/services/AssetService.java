@@ -92,10 +92,7 @@ public class AssetService {
         return historyRepository.findByAssetId(assetId);
     }
 
-    public List<User> getEmployees() {
-
-        return userRepo.findAllByRole("USER");
-    }
+    
 
     public List<Asset> getAssetsByUserId(Long userId) {
         List<Asset> assets = assetRepository.findAll();
